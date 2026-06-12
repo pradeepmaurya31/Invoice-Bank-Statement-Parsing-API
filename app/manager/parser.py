@@ -1,6 +1,6 @@
 import hashlib
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, UTC
 from app.utils.logger import logger
 
 class BaseParser(ABC):
@@ -16,7 +16,7 @@ class PDFInvoiceParser(BaseParser):
             "vendor_name": "Acme Corp Ltd.",
             "amount": 1250.75,
             "currency": "USD",
-            "invoice_date": datetime.utcnow(),
+            "invoice_date": datetime.now(UTC),
             "line_items": [
                 {"description": "Cloud Architecture Consulting", "quantity": 1, "unit_price": 1000.0, "total_price": 1000.0},
                 {"description": "Database Migration Support", "quantity": 1, "unit_price": 250.75, "total_price": 250.75}
@@ -32,7 +32,7 @@ class CSVStatementParser(BaseParser):
             "vendor_name": "Global Bank Corp",
             "amount": 5000.00,
             "currency": "EUR", 
-            "invoice_date": datetime.utcnow(),
+            "invoice_date": datetime.now(UTC),
             "line_items": [],
             "raw_metadata": {"parser_engine": "CSVTabularReader", "rows_detected": 12}
         }
@@ -40,12 +40,17 @@ class CSVStatementParser(BaseParser):
 class DocumentParserFactory:
     @staticmethod
     def get_parser(filename: str) -> BaseParser:
+        if not filename or "." not in filename:
+            raise ValueError("Target structural descriptor parsing failure: Missing extension attribute identifier.")
+            
         ext = filename.split(".")[-1].lower()
         if ext == "pdf":
             return PDFInvoiceParser()
         elif ext == "csv":
             return CSVStatementParser()
-        raise ValueError(f"Unsupported file format: {ext}")
+            
+        # Programmatic exception bubble routed to our controller upload route tracking layer
+        raise ValueError(f"Extensible factory processing system variant target matching pattern unavailable for type signature: .{ext}")
 
 def generate_file_hash(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()

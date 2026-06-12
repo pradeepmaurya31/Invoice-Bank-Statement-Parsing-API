@@ -1,3 +1,4 @@
+from uuid import UUID
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -11,13 +12,13 @@ class LineItemBase(BaseModel):
     total_price: float
 
 class LineItemResponse(LineItemBase):
-    id: int
+    id: UUID
     class Config:
         from_attributes = True
 
 # --- Financial Core Data ---
 class ParsedDataResponse(BaseModel):
-    id: int
+    id: UUID
     vendor_name: Optional[str]
     amount: Optional[float]
     currency: Optional[str]
@@ -36,7 +37,7 @@ class ParsedDataUpdate(BaseModel):
 
 # --- Document Base ---
 class DocumentResponse(BaseModel):
-    id: int
+    id: UUID
     filename: str
     file_hash: str
     document_type: DocumentType

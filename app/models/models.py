@@ -1,6 +1,8 @@
 import enum
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, ForeignKey, JSON
+import uuid
+from datetime import datetime, UTC
+from sqlalchemy import Column, String, Float, DateTime, Enum, ForeignKey, JSON, Integer
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database.database import Base
 
@@ -16,13 +18,14 @@ class ProcessingStatus(str, enum.Enum):
 class Document(Base):
     __tablename__ = "documents"
 
-    id = Column(Integer, primary_key=True, index=True)
+    # Changed from Integer to UUID primary key
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     filename = Column(String, nullable=False)
-    file_hash = Column(String, unique=True, index=True, nullable=False)  # For duplicate tracking
+    file_hash = Column(String, unique=True, index=True, nullable=False)
     document_type = Column(Enum(DocumentType), nullable=False)
     status = Column(Enum(ProcessingStatus), default=ProcessingStatus.PENDING)
     error_message = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
     
     # Relationships
     parsed_data = relationship("ParsedFinancialData", uselist=False, back_populates="document", cascade="all, delete-orphan")
@@ -30,13 +33,14 @@ class Document(Base):
 class ParsedFinancialData(Base):
     __tablename__ = "parsed_financial_data"
 
-    id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, ForeignKey("documents.id"), unique=True)
+    # Changed to UUID primary key and updated foreign key target type
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), unique=True)
     vendor_name = Column(String, index=True, nullable=True)
     amount = Column(Float, index=True, nullable=True)
     currency = Column(String, index=True, default="USD")
-    invoice_date = Column(DateTime, index=True, nullable=True)
-    raw_metadata = Column(JSON, nullable=True)  # Handles messy/additional properties
+    invoice_date = Column(DateTime(timezone=True), index=True, nullable=True)
+    raw_metadata = Column(JSON, nullable=True)
     
     document = relationship("Document", back_populates="parsed_data")
     line_items = relationship("LineItem", back_populates="financial_data", cascade="all, delete-orphan")
@@ -44,8 +48,9 @@ class ParsedFinancialData(Base):
 class LineItem(Base):
     __tablename__ = "line_items"
 
-    id = Column(Integer, primary_key=True, index=True)
-    financial_data_id = Column(Integer, ForeignKey("parsed_financial_data.id"))
+    # Changed to UUID primary key and updated foreign key target type
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    financial_data_id = Column(UUID(as_uuid=True), ForeignKey("parsed_financial_data.id"))
     description = Column(String, nullable=False)
     quantity = Column(Integer, default=1)
     unit_price = Column(Float, nullable=False)
